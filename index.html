@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Random Password Generator</title>
+    <link href="libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #64ffda;
+            font-size: 2rem;
+            text-shadow: 0 0 20px rgba(100, 255, 218, 0.3);
+        }
+
+        .password-display {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(100, 255, 218, 0.3);
+        }
+
+        .password-text {
+            font-size: 1.5rem;
+            font-family: 'Courier New', monospace;
+            word-break: break-all;
+            margin-bottom: 15px;
+            color: #64ffda;
+            text-shadow: 0 0 10px rgba(100, 255, 218, 0.2);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, #64ffda, #4fc3f7);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            color: #1a1a2e;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(100, 255, 218, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .controls {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: #b0b0b0;
+        }
+
+        .length-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .length-input {
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(100, 255, 218, 0.3);
+            border-radius: 10px;
+            padding: 10px 15px;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            width: 80px;
+            text-align: center;
+        }
+
+        .length-input:focus {
+            outline: none;
+            border-color: #64ffda;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+
+        .length-slider {
+            flex: 1;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .length-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #64ffda, #4fc3f7);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+
+        .length-slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #64ffda, #4fc3f7);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            background: rgba(100, 255, 218, 0.1);
+            border-color: rgba(100, 255, 218, 0.3);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            accent-color: #64ffda;
+            cursor: pointer;
+        }
+
+        .checkbox-item label {
+            margin: 0;
+            cursor: pointer;
+            color: #e0e0e0;
+        }
+
+        .error-message {
+            background: rgba(255, 99, 99, 0.2);
+            border: 2px solid rgba(255, 99, 99, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            color: #ff6363;
+            text-align: center;
+            display: none;
+        }
+
+        .copy-success {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #4caf50, #66bb6a);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        .copy-success.show {
+            transform: translateX(0);
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            color: #b0b0b0;
+            font-size: 0.9rem;
+        }
+
+        .footer a {
+            color: #64ffda;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: #4fc3f7;
+            text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .checkbox-group {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2><i class="fas fa-key"></i> Random Password Generator</h1>
+        
+        <div class="password-display">
+            <div class="password-text" id="passwordDisplay">Click "Generate" to create a password</div>
+            <div class="button-group">
+                <button class="btn" id="copyBtn">
+                    <i class="fas fa-copy"></i> Copy
+                </button>
+                <button class="btn" id="generateBtn">
+                    <i class="fas fa-sync-alt"></i> Generate
+                </button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="lengthInput">Password length:</label>
+                <div class="length-control">
+                    <input type="number" id="lengthInput" class="length-input" min="6" max="40" value="20">
+                    <input type="range" id="lengthSlider" class="length-slider" min="6" max="40" value="20">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Typy znaków:</label>
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="lowercase" checked>
+                        <label for="lowercase">Lowercase letters (a-z)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="uppercase" checked>
+                        <label for="uppercase">Uppercase letters (A-Z)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="digits" checked>
+                        <label for="digits">Numbers (0-9)</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="special">
+                        <label for="special">Special characters (!@#$%...)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="error-message" id="errorMessage">
+                <i class="fas fa-exclamation-triangle"></i>
+                Select at least one character type!
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        <p>Source code available at: <a href="https://github.com/gesior/random-password-generator" target="_blank">https://github.com/gesior/random-password-generator</a></p>
+    </div>
+
+    <div class="copy-success" id="copySuccess">
+        <i class="fas fa-check"></i> Copied to clipboard!
+    </div>
+
+    <script>
+        // Character sets
+        const characterSets = {
+            lowercase: 'abcdefghijklmnopqrstuvwxyz',
+            uppercase: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            digits: '0123456789',
+            special: '!@#$%^&*()_+-=[]{}|;:,.<>?'
+        };
+
+        // DOM elements
+        const passwordDisplay = document.getElementById('passwordDisplay');
+        const copyBtn = document.getElementById('copyBtn');
+        const generateBtn = document.getElementById('generateBtn');
+        const lengthInput = document.getElementById('lengthInput');
+        const lengthSlider = document.getElementById('lengthSlider');
+        const checkboxes = {
+            lowercase: document.getElementById('lowercase'),
+            uppercase: document.getElementById('uppercase'),
+            digits: document.getElementById('digits'),
+            special: document.getElementById('special')
+        };
+        const errorMessage = document.getElementById('errorMessage');
+        const copySuccess = document.getElementById('copySuccess');
+
+        // Generate password function
+        function generatePassword() {
+            const length = parseInt(lengthInput.value);
+            const selectedSets = [];
+            
+            // Collect selected character sets
+            Object.keys(checkboxes).forEach(key => {
+                if (checkboxes[key].checked) {
+                    selectedSets.push(characterSets[key]);
+                }
+            });
+
+            // Check if at least one character type is selected
+            if (selectedSets.length === 0) {
+                passwordDisplay.textContent = 'Select at least one character type!';
+                passwordDisplay.style.color = '#ff6363';
+                errorMessage.style.display = 'block';
+                return;
+            }
+
+            // Hide error message
+            errorMessage.style.display = 'none';
+            passwordDisplay.style.color = '#64ffda';
+
+            // Generate password
+            const allChars = selectedSets.join('');
+            let password = '';
+            
+            // Ensure at least one character from each selected set
+            selectedSets.forEach(charSet => {
+                password += charSet[Math.floor(Math.random() * charSet.length)];
+            });
+            
+            // Fill the rest randomly
+            for (let i = password.length; i < length; i++) {
+                password += allChars[Math.floor(Math.random() * allChars.length)];
+            }
+            
+            // Shuffle the password
+            password = password.split('').sort(() => Math.random() - 0.5).join('');
+            
+            passwordDisplay.textContent = password;
+        }
+
+        // Copy to clipboard function
+        async function copyToClipboard() {
+            const password = passwordDisplay.textContent;
+            
+            if (password === 'Click "Generate" to create a password' || 
+                password === 'Select at least one character type!') {
+                return;
+            }
+
+            try {
+                await navigator.clipboard.writeText(password);
+                copySuccess.classList.add('show');
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = password;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                copySuccess.classList.add('show');
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 2000);
+            }
+        }
+
+        // Sync length input and slider
+        function syncLength() {
+            lengthInput.value = lengthSlider.value;
+            generatePassword();
+        }
+
+        // Event listeners
+        lengthInput.addEventListener('input', syncLength);
+        lengthSlider.addEventListener('input', syncLength);
+        
+        Object.values(checkboxes).forEach(checkbox => {
+            checkbox.addEventListener('change', generatePassword);
+        });
+
+        generateBtn.addEventListener('click', generatePassword);
+        copyBtn.addEventListener('click', copyToClipboard);
+
+        // Generate initial password
+        generatePassword();
+    </script>
+</body>
+</html>
