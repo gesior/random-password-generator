@@ -42,24 +42,101 @@
         .password-display {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
             border: 2px solid rgba(100, 255, 218, 0.3);
         }
 
-        .password-text {
-            font-size: 1.5rem;
-            font-family: 'Courier New', monospace;
-            word-break: break-all;
+        .password-list-container {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid rgba(100, 255, 218, 0.3);
+            border-radius: 10px;
+            padding: 15px;
             margin-bottom: 15px;
+            font-size: 1.1rem;
+            font-family: 'Courier New', monospace;
+            color: #64ffda;
+            outline: none;
+            overflow-y: auto;
+            user-select: text;
+        }
+
+        .password-list-container:focus-within {
+            border-color: #64ffda;
+            box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+        }
+
+        .password-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .password-row {
+            display: flex;
+            align-items: center;
+            line-height: 1.6;
+        }
+
+        .password-row:last-child {
+            border-bottom: none;
+        }
+
+        .password-text {
+            flex: 1;
+            font-family: 'Courier New', monospace;
             color: #64ffda;
             text-shadow: 0 0 10px rgba(100, 255, 218, 0.2);
+            word-break: break-all;
+            user-select: text;
+            cursor: text;
+        }
+
+        .password-row::selection,
+        .password-text::selection {
+            background: rgba(100, 255, 218, 0.3);
+        }
+
+        .copy-icon-btn {
+            background: rgba(100, 255, 218, 0.2);
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            border-radius: 6px;
+            padding: 6px 10px;
+            color: #64ffda;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 36px;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        .copy-icon-btn:hover {
+            background: rgba(100, 255, 218, 0.3);
+            transform: scale(1.1);
+        }
+
+        .copy-icon-btn:active {
+            transform: scale(0.95);
         }
 
         .button-group {
             display: flex;
             gap: 10px;
             justify-content: center;
+            align-items: center;
+        }
+        
+        .button-group .length-input {
+            width: 80px;
+            margin-left: 0;
         }
 
         .btn {
@@ -138,6 +215,7 @@
             border-radius: 3px;
             outline: none;
             -webkit-appearance: none;
+            appearance: none;
         }
 
         .length-slider::-webkit-slider-thumb {
@@ -267,14 +345,17 @@
         <h2><i class="fas fa-key"></i> Random Password Generator</h1>
         
         <div class="password-display">
-            <div class="password-text" id="passwordDisplay">Click "Generate" to create a password</div>
+            <div id="passwordDisplay" class="password-list-container" tabindex="0">
+                <div class="password-list" id="passwordList"></div>
+            </div>
             <div class="button-group">
                 <button class="btn" id="copyBtn">
-                    <i class="fas fa-copy"></i> Copy
+                    <i class="fas fa-copy"></i> Copy All
                 </button>
                 <button class="btn" id="generateBtn">
                     <i class="fas fa-sync-alt"></i> Generate
                 </button>
+                <input type="number" id="countInput" class="length-input" min="1" max="10" value="1">
             </div>
         </div>
 
@@ -335,8 +416,10 @@
 
         // DOM elements
         const passwordDisplay = document.getElementById('passwordDisplay');
+        const passwordList = document.getElementById('passwordList');
         const copyBtn = document.getElementById('copyBtn');
         const generateBtn = document.getElementById('generateBtn');
+        const countInput = document.getElementById('countInput');
         const lengthInput = document.getElementById('lengthInput');
         const lengthSlider = document.getElementById('lengthSlider');
         const checkboxes = {
@@ -347,32 +430,11 @@
         };
         const errorMessage = document.getElementById('errorMessage');
         const copySuccess = document.getElementById('copySuccess');
+        
+        let generatedPasswords = [];
 
-        // Generate password function
-        function generatePassword() {
-            const length = parseInt(lengthInput.value);
-            const selectedSets = [];
-            
-            // Collect selected character sets
-            Object.keys(checkboxes).forEach(key => {
-                if (checkboxes[key].checked) {
-                    selectedSets.push(characterSets[key]);
-                }
-            });
-
-            // Check if at least one character type is selected
-            if (selectedSets.length === 0) {
-                passwordDisplay.textContent = 'Select at least one character type!';
-                passwordDisplay.style.color = '#ff6363';
-                errorMessage.style.display = 'block';
-                return;
-            }
-
-            // Hide error message
-            errorMessage.style.display = 'none';
-            passwordDisplay.style.color = '#64ffda';
-
-            // Generate password
+        // Generate single password function
+        function generateSinglePassword(length, selectedSets) {
             const allChars = selectedSets.join('');
             let password = '';
             
@@ -389,18 +451,89 @@
             // Shuffle the password
             password = password.split('').sort(() => Math.random() - 0.5).join('');
             
-            passwordDisplay.textContent = password;
+            return password;
         }
 
-        // Copy to clipboard function
-        async function copyToClipboard() {
-            const password = passwordDisplay.textContent;
+        // Generate passwords function
+        function generatePassword() {
+            const length = parseInt(lengthInput.value);
+            const count = parseInt(countInput.value);
+            const selectedSets = [];
             
-            if (password === 'Click "Generate" to create a password' || 
-                password === 'Select at least one character type!') {
+            // Collect selected character sets
+            Object.keys(checkboxes).forEach(key => {
+                if (checkboxes[key].checked) {
+                    selectedSets.push(characterSets[key]);
+                }
+            });
+
+            // Check if at least one character type is selected
+            if (selectedSets.length === 0) {
+                passwordList.innerHTML = '';
+                passwordDisplay.style.minHeight = '150px';
+                errorMessage.style.display = 'block';
+                generatedPasswords = [];
                 return;
             }
 
+            // Hide error message
+            errorMessage.style.display = 'none';
+
+            // Generate passwords
+            generatedPasswords = [];
+            for (let i = 0; i < count; i++) {
+                generatedPasswords.push(generateSinglePassword(length, selectedSets));
+            }
+            
+            // Display passwords
+            displayPasswords();
+        }
+
+        // Display passwords function
+        function displayPasswords() {
+            if (generatedPasswords.length === 0) {
+                passwordList.innerHTML = '';
+                passwordDisplay.style.minHeight = '150px';
+                return;
+            }
+
+            passwordList.innerHTML = '';
+            
+            generatedPasswords.forEach((password, index) => {
+                const passwordRow = document.createElement('div');
+                passwordRow.className = 'password-row';
+                
+                const passwordText = document.createElement('div');
+                passwordText.className = 'password-text';
+                passwordText.textContent = password;
+                
+                const copyIconBtn = document.createElement('button');
+                copyIconBtn.className = 'copy-icon-btn';
+                copyIconBtn.innerHTML = '<i class="fas fa-copy"></i>';
+                copyIconBtn.title = 'Copy this password';
+                copyIconBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    copySinglePassword(password);
+                });
+                
+                passwordRow.appendChild(passwordText);
+                passwordRow.appendChild(copyIconBtn);
+                passwordList.appendChild(passwordRow);
+            });
+
+            // Automatically adjust height based on number of passwords
+            // Calculate height: padding (30px) + (row height ~48px + gap 8px) * count - last gap
+            const padding = 30; // top + bottom padding (15px each)
+            const rowHeight = 29; // approximate height per row (min-height 2em + padding)
+            const gap = 8; // gap between rows
+            const rowCount = generatedPasswords.length;
+            const calculatedHeight = padding + (rowHeight + gap) * rowCount - gap;
+            const minHeight = Math.max(rowHeight, calculatedHeight);
+            passwordDisplay.style.minHeight = minHeight + 'px';
+        }
+
+        // Copy single password to clipboard function
+        async function copySinglePassword(password) {
             try {
                 await navigator.clipboard.writeText(password);
                 copySuccess.classList.add('show');
@@ -423,6 +556,41 @@
             }
         }
 
+        // Copy all passwords to clipboard function
+        async function copyAllPasswords() {
+            if (generatedPasswords.length === 0) {
+                return;
+            }
+
+            const allPasswords = generatedPasswords.join('\n');
+            
+            try {
+                await navigator.clipboard.writeText(allPasswords);
+                copySuccess.classList.add('show');
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 2000);
+            } catch (err) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = allPasswords;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                copySuccess.classList.add('show');
+                setTimeout(() => {
+                    copySuccess.classList.remove('show');
+                }, 2000);
+            }
+        }
+
+        // Sync count input
+        function syncCount() {
+            generatePassword();
+        }
+
         // Sync length input and slider
         function syncLength() {
             lengthInput.value = lengthSlider.value;
@@ -430,6 +598,7 @@
         }
 
         // Event listeners
+        countInput.addEventListener('input', syncCount);
         lengthInput.addEventListener('input', syncLength);
         lengthSlider.addEventListener('input', syncLength);
         
@@ -438,7 +607,7 @@
         });
 
         generateBtn.addEventListener('click', generatePassword);
-        copyBtn.addEventListener('click', copyToClipboard);
+        copyBtn.addEventListener('click', copyAllPasswords);
 
         // Generate initial password
         generatePassword();
